@@ -1,0 +1,22 @@
+{
+	"path": "/Users/ryanmorrison/Desktop/Development/expense-tracker",
+	"geolocation": {
+		"data": {
+			"city": "Lake Worth",
+			"country": {
+				"code": "US",
+				"name": "United States"
+			},
+			"subdivision": {
+				"code": "FL",
+				"name": "Florida"
+			},
+			"timezone": "America/New_York",
+			"latitude": 26.5991,
+			"longitude": -80.1284,
+			"postalCode": "33463"
+		},
+		"timestamp": 1734475083949
+	},
+	"siteId": "f0092d2c-3cdd-410f-8b23-91c4408c07d7"
+}

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Form</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <h2>Submit Expense</h2>
+    <form id="expenseForm">
+        <div class="form-group">
+            <label for="amount">Amount ($)</label>
+            <input type="number" id="amount" name="amount" step="0.01" required>
+        </div>
+
+        <div class="form-group">
+            <label for="expense_date">Date</label>
+            <input type="date" id="expense_date" name="expense_date" required>
+        </div>
+
+        <div class="form-group">
+            <label for="expense_type">Expense Type</label>
+            <select id="expense_type" name="expense_type" required>
+                <option value="">Select an expense type...</option>
+                <option value="Breakfast">Breakfast</option>
+                <option value="Courtesy">Courtesy</option>
+                <option value="DFW MRI STAFF">DFW MRI STAFF</option>
+                <option value="Dinner">Dinner</option>
+                <option value="Event">Event</option>
+                <option value="Gift">Gift</option>
+                <option value="Lunch">Lunch</option>
+                <option value="Marketing Materials">Marketing Materials</option>
+                <option value="Maverick's Games">Maverick's Games</option>
+                <option value="Account Lunch">Office Lunch</option>
+                <option value="Office Visit">Office Visit</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="expense_name">Expense Name</label>
+            <input type="text" id="expense_name" name="expense_name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="expense_notes">Notes</label>
+            <textarea id="expense_notes" name="expense_notes" rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="payment_type">Payment Type</label>
+            <select id="payment_type" name="payment_type" required>
+                <option value="">Select a payment type...</option>
+                <option value="Lisa's Visa">Lisa's H. CC</option>
+                <option value="Bob's Visa">Bob's CC</option>
+                <option value="John's Visa">John's CC</option>
+                <option value="Marketer Visa">DFW Purchased</option>
+                <option value="DFW Check">DFW Check</option>
+                <option value="Lisa's S. Visa">Lisa's S. CC</option>
+                <option value="Chris' Visa">Chris' CC</option>
+                <option value="Luis' Visa">Luis' CC</option>
+                <option value="Renee's Visa">Renee's CC</option>
+                <option value="Erica's Visa">Erica's CC</option>
+                <option value="Shaun's Visa">Shaun's CC</option>
+                <option value="David's Visa">David's CC</option>
+                <option value="Ty's Visa">Ty's CC</option>
+                <option value="Michael's Visa">Michael's CC</option>
+                <option value="Karen's Visa">Karen's CC</option>
+                <option value="Chloe's CC">Chloe's CC</option>
+            </select>
+        </div>
+
+        <button type="submit">Submit Expense</button>
+    </form>
+
+    <div id="loading" class="loading">Submitting expense...</div>
+    <div id="successMessage" class="success-message">Expense submitted successfully!</div>
+    <div id="errorMessage" class="error-message">Error submitting expense. Please try again.</div>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>
