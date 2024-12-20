@@ -1,3 +1,79 @@
+let contacts = [];
+let selectedContact = null;
+
+function filterContacts(searchTerm) {
+    if (!searchTerm) {
+        document.getElementById('search-results').style.display = 'none';
+        return;
+    }
+
+    const filteredContacts = contacts.filter(contact => {
+        const firstName = contact.properties.firstname || '';
+        const lastName = contact.properties.lastname || '';
+        const fullName = `${firstName} ${lastName}`.toLowerCase();
+        return fullName.includes(searchTerm.toLowerCase());
+    });
+
+    displaySearchResults(filteredContacts);
+}
+
+function displaySearchResults(results) {
+    const searchResults = document.getElementById('search-results');
+    searchResults.innerHTML = '';
+    
+    if (results.length > 0) {
+        results.forEach(contact => {
+            const div = document.createElement('div');
+            div.className = 'search-result-item';
+            div.textContent = `${contact.properties.firstname || ''} ${contact.properties.lastname || ''}`;
+            
+            div.addEventListener('click', () => {
+                selectContact(contact);
+            });
+            
+            searchResults.appendChild(div);
+        });
+        searchResults.style.display = 'block';
+    } else {
+        searchResults.style.display = 'none';
+    }
+}
+
+function selectContact(contact) {
+    selectedContact = contact.id;
+    console.log('Selected Contact ID:', selectedContact);
+    console.log('Full Contact Object:', contact);
+    
+    const searchInput = document.getElementById('contact-search');
+    searchInput.value = `${contact.properties.firstname || ''} ${contact.properties.lastname || ''}`;
+    document.getElementById('search-results').style.display = 'none';
+}
+
+async function fetchContacts() {
+    try {
+        const response = await fetch('/api/contacts');
+        const data = await response.json();
+        contacts = data.results;
+        
+        const searchInput = document.getElementById('contact-search');
+        searchInput.addEventListener('input', (e) => {
+            filterContacts(e.target.value);
+        });
+
+        // Close search results when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-container')) {
+                document.getElementById('search-results').style.display = 'none';
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching contacts:', error);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', fetchContacts);
+
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('expenseForm');
     const successMessage = document.getElementById('successMessage');
@@ -7,10 +83,8 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        loadingIndicator.style.display = 'block';
-        successMessage.style.display = 'none';
-        errorMessage.style.display = 'none';
-
+        console.log('Selected Contact at submission:', selectedContact);
+        
         const formData = new FormData();
 
         const expenseData = {
@@ -26,34 +100,49 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        console.log('Sending data:', expenseData);
-
         formData.append('data', JSON.stringify(expenseData));
 
-        const receipt1 = document.getElementById('receipt_photo_1').files[0];
-        const receipt2 = document.getElementById('receipt_photo_2').files[0];
-
-        if (receipt1) formData.append('receipt_photo_1', receipt1);
-        if (receipt2) formData.append('receipt_photo_2', receipt2);
-
         try {
+            // First create the expense
             const response = await fetch('/api/submit-expense', {
                 method: 'POST',
                 body: formData
             });
 
-            const responseData = await response.json();
-            console.log('Response:', responseData);
-
             if (!response.ok) {
-                throw new Error(responseData.error || 'Failed to submit expense');
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const responseData = await response.json();
+            console.log('Expense created:', responseData);
+            
+            // If we have both an expense ID and contact ID, create the association
+            if (responseData.expense && responseData.expense.id && selectedContact) {
+                console.log('Creating association between expense and contact');
+                const associationResponse = await fetch('/api/create-association', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        expenseId: responseData.expense.id,
+                        contactId: selectedContact
+                    })
+                });
+                
+                if (!associationResponse.ok) {
+                    throw new Error(`Association error! status: ${associationResponse.status}`);
+                }
+
+                const associationData = await associationResponse.json();
+                console.log('Association response:', associationData);
             }
 
             successMessage.style.display = 'block';
             form.reset();
         } catch (error) {
             console.error('Error:', error);
-            errorMessage.textContent = error.message;
+            errorMessage.textContent = `Error: ${error.message}`;
             errorMessage.style.display = 'block';
         } finally {
             loadingIndicator.style.display = 'none';
