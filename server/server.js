@@ -199,28 +199,15 @@ app.post('/api/submit-expense', upload.fields([
     }
 });
 
-// Add new endpoint to get contacts
+// Endpoint to get ALL contacts from HubSpot
 app.get('/api/contacts', async (req, res) => {
     try {
-        // Set a large limit and include pagination info
-        const response = await axios.get('https://api.hubapi.com/crm/v3/objects/contacts', {
-            headers: {
-                'Authorization': `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
-                'Content-Type': 'application/json'
-            },
-            params: {
-                limit: 100,  // Maximum allowed per page
-                properties: ['firstname', 'lastname', 'email'],  // Specify which properties to fetch
-                archived: false  // Exclude archived contacts
-            }
-        });
+        let allContacts = [];
+        let hasMore = true;
+        let after = undefined;
 
-        let allContacts = response.data.results;
-        let nextPage = response.data.paging?.next?.after;
-
-        // Keep fetching while there are more pages
-        while (nextPage) {
-            const nextResponse = await axios.get('https://api.hubapi.com/crm/v3/objects/contacts', {
+        while (hasMore) {
+            const response = await axios.get('https://api.hubapi.com/crm/v3/objects/contacts', {
                 headers: {
                     'Authorization': `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
                     'Content-Type': 'application/json'
@@ -228,27 +215,89 @@ app.get('/api/contacts', async (req, res) => {
                 params: {
                     limit: 100,
                     properties: ['firstname', 'lastname', 'email'],
-                    after: nextPage,
-                    archived: false
+                    archived: false,
+                    after: after
                 }
             });
+
+            allContacts = [...allContacts, ...response.data.results];
             
-            allContacts = [...allContacts, ...nextResponse.data.results];
-            nextPage = nextResponse.data.paging?.next?.after;
+            // Check if there are more pages
+            hasMore = response.data.paging?.next?.after;
+            after = response.data.paging?.next?.after;
+
+            console.log(`Fetched ${allContacts.length} contacts so far...`);
         }
 
         console.log('Total contacts fetched:', allContacts.length);
-        console.log('Contacts:', JSON.stringify(allContacts, null, 2));
+        
+        // Format the response data
+        const formattedContacts = allContacts.map(contact => ({
+            id: contact.id,
+            properties: {
+                firstname: contact.properties.firstname || '',
+                lastname: contact.properties.lastname || '',
+                email: contact.properties.email || ''
+            }
+        }));
 
-        // Send all contacts to frontend
         res.json({
-            total: allContacts.length,
-            results: allContacts
+            count: formattedContacts.length,
+            results: formattedContacts
         });
-
     } catch (error) {
-        console.error('Error fetching contacts:', error);
+        console.error('Error fetching contacts from HubSpot:', error.response?.data || error);
         res.status(500).json({ error: 'Failed to fetch contacts' });
+    }
+});
+
+// Endpoint to get ALL companies from HubSpot
+app.get('/api/companies', async (req, res) => {
+    try {
+        let allCompanies = [];
+        let hasMore = true;
+        let after = undefined;
+
+        while (hasMore) {
+            const response = await axios.get('https://api.hubapi.com/crm/v3/objects/companies', {
+                headers: {
+                    'Authorization': `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+                    'Content-Type': 'application/json'
+                },
+                params: {
+                    limit: 100,
+                    properties: ['name'],
+                    archived: false,
+                    after: after
+                }
+            });
+
+            allCompanies = [...allCompanies, ...response.data.results];
+            
+            // Check if there are more pages
+            hasMore = response.data.paging?.next?.after;
+            after = response.data.paging?.next?.after;
+
+            console.log(`Fetched ${allCompanies.length} companies so far...`);
+        }
+
+        console.log('Total companies fetched:', allCompanies.length);
+        
+        // Format the response data
+        const formattedCompanies = allCompanies.map(company => ({
+            id: company.id,
+            properties: {
+                name: company.properties.name || ''
+            }
+        }));
+
+        res.json({
+            count: formattedCompanies.length,
+            results: formattedCompanies
+        });
+    } catch (error) {
+        console.error('Error fetching companies from HubSpot:', error.response?.data || error);
+        res.status(500).json({ error: 'Failed to fetch companies' });
     }
 });
 
@@ -325,6 +374,60 @@ app.get('/api/association-types', async (req, res) => {
         console.error('Error fetching association types:', error.response?.data);
         res.status(500).json({ 
             error: 'Failed to fetch association types',
+            details: error.response?.data || error.message
+        });
+    }
+});
+
+// Add endpoint to create company association
+app.post('/api/create-company-association', async (req, res) => {
+    try {
+        const { expenseId, companyId } = req.body;
+        
+        console.log('Creating company association:', { expenseId, companyId });
+
+        // First, get the valid association types between companies and expenses
+        const typesResponse = await axios.get(
+            `https://api.hubapi.com/crm/v4/associations/companies/p44120672_expenses/labels`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`
+                }
+            }
+        );
+
+        console.log('Available company association types:', typesResponse.data);
+
+        // Create the association using the first available type
+        const response = await axios.post(
+            'https://api.hubapi.com/crm/v3/associations/companies/p44120672_expenses/batch/create',
+            {
+                inputs: [
+                    {
+                        from: { id: companyId },
+                        to: { id: expenseId },
+                        type: typesResponse.data.results[0].typeId // Use the first available type
+                    }
+                ]
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        
+        console.log('Company Association Response:', response.data);
+        
+        res.json({
+            success: true,
+            data: response.data
+        });
+    } catch (error) {
+        console.error('Company Association Error Details:', error.response?.data);
+        res.status(500).json({ 
+            error: 'Failed to create company association',
             details: error.response?.data || error.message
         });
     }
