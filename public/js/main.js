@@ -5,6 +5,52 @@ let selectedCompany = null;
 let mavsGames = [];
 let selectedMavsGame = null;
 
+const MAVS_GAMES = [
+    { id: "17145723550", name: "Mav's vs Toronto Raptors" },
+    { id: "18868287318", name: "Mav's vs Los Angeles Lakers 2" },
+    { id: "17145723546", name: "Mav's vs Atlanta Hawks" },
+    { id: "17145723512", name: "Mav's vs Brooklyn Nets" },
+    { id: "17145723510", name: "Mav's vs Detroit Pistons" },
+    { id: "17145723509", name: "Mav's vs Philadelphia 76ers" },
+    { id: "17145723506", name: "Mav's vs Phoenix Suns 2" },
+    { id: "18868287270", name: "Mav's vs Memphis Grizzlies 2" },
+    { id: "18868287265", name: "Mav's vs Sacramento Kings 2" },
+    { id: "18868287261", name: "Mav's vs Milwaukee Bucks" },
+    { id: "17145723498", name: "Mav's vs Charlotte Hornets" },
+    { id: "17145723497", name: "Mav's vs New Orleans Pelicans 3" },
+    { id: "17145723458", name: "Mav's vs Miami Heat" },
+    { id: "18868287152", name: "Mav's vs Golden State Warriors" },
+    { id: "18868287146", name: "Mav's vs Sacramento Kings 1" },
+    { id: "17145723455", name: "Mav's vs Houston Rockets 2" },
+    { id: "17145723453", name: "Mav's vs Washington Wizards" },
+    { id: "17145723452", name: "Mav's vs Boston Celtics" },
+    { id: "17145723450", name: "Mav's vs Minnesota Timberwolves 2" },
+    { id: "18868287139", name: "Mav's vs Oklahoma City Thunder" },
+    { id: "18868287100", name: "Mav's vs Denver Nuggets 2" },
+    { id: "17145723405", name: "Mav's vs Denver Nuggets 1" },
+    { id: "18868287093", name: "Mav's vs Portland Trailblazers 2" },
+    { id: "18868287089", name: "Mav's vs Los Angeles Lakers" },
+    { id: "18868287086", name: "Mav's vs Cleveland Cavaliers" },
+    { id: "18868287079", name: "Mav's vs Minnesota Timberwolves 1" },
+    { id: "17145723394", name: "Mav's vs Portland Trailblazers 1" },
+    { id: "18868287003", name: "Mav's vs Los Angeles Clippers 2" },
+    { id: "17145723239", name: "Mav's vs Los Angeles Clippers 1" },
+    { id: "18868287001", name: "Mav's vs Memphis Grizzlies 1" },
+    { id: "18868286998", name: "Mav's vs New Orleans Pelicans 2" },
+    { id: "18868286996", name: "Mav's vs New Orleans Pelicans 1" },
+    { id: "17145723224", name: "Mav's vs San Antonio Spurs" },
+    { id: "18868286991", name: "Mav's vs Phoenix Suns 1" },
+    { id: "18868286989", name: "Mav's vs Chicago Bulls" },
+    { id: "18868286984", name: "Mav's vs Indiana Pacers" },
+    { id: "18868286982", name: "Mav's vs Orlando Magic" },
+    { id: "18868286978", name: "Mav's vs Houston Rockets 1" },
+    { id: "18868286360", name: "Mav's vs Utah Jazz" },
+    { id: "17145722523", name: "Mav's 1st Season Game vs San Antonio Spurs" },
+    { id: "18868286348", name: "Mav's PRESEASON vs Milwaukee Bucks" },
+    { id: "18868286331", name: "Mav's PRESEASON vs Utah Jazz" },
+    { id: "16614392865", name: "Mav's PRESEASON vs Memphis Grizzlies" }
+];
+
 // Fetch contacts from HubSpot
 async function fetchContacts() {
     try {
@@ -35,27 +81,18 @@ async function fetchCompanies() {
     }
 }
 
-// Fetch Mavs games from HubSpot
-async function fetchMavsGames() {
-    try {
-        console.log('Fetching Mavs games...');
-        const response = await fetch('/api/mavs-games');
-        const data = await response.json();
-        console.log('Mavs games data:', data);
-        mavsGames = data.results;
-        return mavsGames;
-    } catch (error) {
-        console.error('Error fetching Mavs games:', error);
-        return [];
-    }
+// Remove the old fetchMavsGames function and replace with this simplified version
+function initializeMavsGames() {
+    console.log('Initializing Mavs games...');
+    mavsGames = MAVS_GAMES;
 }
 
 // Initialize search functionality
 async function initializeSearch() {
     // Fetch the data first
-    await Promise.all([fetchContacts(), fetchCompanies(), fetchMavsGames()]);
+    await Promise.all([fetchContacts(), fetchCompanies()]);
     
-    console.log('Data loaded - Contacts:', contacts.length, 'Companies:', companies.length, 'Mavs games:', mavsGames.length);
+    console.log('Data loaded - Contacts:', contacts.length, 'Companies:', companies.length);
 
     // Set up contact search
     const contactSearch = document.getElementById('contact-search');
@@ -115,10 +152,15 @@ async function initializeSearch() {
 
     // Filter Mavs games when typing
     mavsGameSearch.addEventListener('input', (e) => {
+        console.log('Search input event triggered');
         const searchTerm = e.target.value.toLowerCase();
-        const filteredGames = mavsGames.filter(game => 
-            game.properties.name.toLowerCase().includes(searchTerm)
+        console.log('Search term:', searchTerm);
+        
+        const filteredGames = MAVS_GAMES.filter(game => 
+            game.name.toLowerCase().includes(searchTerm)
         );
+        console.log('Filtered games:', filteredGames);
+        
         displayMavsGamesSearchResults(filteredGames);
     });
 
@@ -173,33 +215,49 @@ function displayCompanyResults(companiesToShow) {
 // Helper function to display Mavs games results
 function displayMavsGamesSearchResults(results) {
     const searchResults = document.getElementById('mavs-game-search-results');
-    const selectedMavsGameDiv = document.getElementById('selected-mavs-game');
     
     searchResults.innerHTML = '';
     
     results.forEach(game => {
         const div = document.createElement('div');
         div.className = 'search-result-item';
-        div.textContent = game.properties.name;
+        div.textContent = game.name;
         
         div.addEventListener('click', () => {
             selectedMavsGame = game.id;
             searchResults.style.display = 'none';
-            selectedMavsGameDiv.textContent = game.properties.name;
-            selectedMavsGameDiv.style.display = 'block';
-            document.getElementById('mavs-game-search').value = '';
+            document.getElementById('mavs-game-search').value = game.name;
         });
         
         searchResults.appendChild(div);
     });
     
-    searchResults.style.display = results.length > 0 ? 'block' : 'none';
+    searchResults.style.display = 'block';
 }
 
 // Initialize when the page loads
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing search...');
     initializeSearch();
+    
+    // Initialize Mavs games
+    initializeMavsGames();
+    
+    // Add event listener for Mavs game search
+    const mavsGameSearch = document.getElementById('mavs-game-search');
+    if (mavsGameSearch) {
+        console.log('Mavs game search input found, adding event listener');
+        mavsGameSearch.addEventListener('input', (e) => {
+            console.log('Search input event triggered');
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredGames = MAVS_GAMES.filter(game => 
+                game.name.toLowerCase().includes(searchTerm)
+            );
+            displayMavsGamesSearchResults(filteredGames);
+        });
+    } else {
+        console.error('Mavs game search input not found!');
+    }
 });
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -321,4 +379,29 @@ document.addEventListener('DOMContentLoaded', () => {
             loadingIndicator.style.display = 'none';
         }
     });
+});
+
+// Add this function to immediately show all games when clicking the search field
+document.getElementById('mavs-game-search').addEventListener('focus', (e) => {
+    console.log('Search field focused');
+    // Show all games immediately when focusing on the search field
+    displayMavsGamesSearchResults(MAVS_GAMES);
+});
+
+// Modify the input event listener to handle both empty and non-empty searches
+document.getElementById('mavs-game-search').addEventListener('input', (e) => {
+    console.log('Search input event triggered');
+    const searchTerm = e.target.value.toLowerCase();
+    console.log('Search term:', searchTerm);
+    
+    // If search is empty, show all games
+    if (searchTerm === '') {
+        displayMavsGamesSearchResults(MAVS_GAMES);
+    } else {
+        // Filter games based on search term
+        const filteredGames = MAVS_GAMES.filter(game => 
+            game.name.toLowerCase().includes(searchTerm)
+        );
+        displayMavsGamesSearchResults(filteredGames);
+    }
 });
