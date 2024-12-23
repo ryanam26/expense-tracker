@@ -2,6 +2,8 @@ let contacts = [];
 let companies = [];
 let selectedContact = null;
 let selectedCompany = null;
+let mavsGames = [];
+let selectedMavsGame = null;
 
 // Fetch contacts from HubSpot
 async function fetchContacts() {
@@ -33,12 +35,27 @@ async function fetchCompanies() {
     }
 }
 
+// Fetch Mavs games from HubSpot
+async function fetchMavsGames() {
+    try {
+        console.log('Fetching Mavs games...');
+        const response = await fetch('/api/mavs-games');
+        const data = await response.json();
+        console.log('Mavs games data:', data);
+        mavsGames = data.results;
+        return mavsGames;
+    } catch (error) {
+        console.error('Error fetching Mavs games:', error);
+        return [];
+    }
+}
+
 // Initialize search functionality
 async function initializeSearch() {
     // Fetch the data first
-    await Promise.all([fetchContacts(), fetchCompanies()]);
+    await Promise.all([fetchContacts(), fetchCompanies(), fetchMavsGames()]);
     
-    console.log('Data loaded - Contacts:', contacts.length, 'Companies:', companies.length);
+    console.log('Data loaded - Contacts:', contacts.length, 'Companies:', companies.length, 'Mavs games:', mavsGames.length);
 
     // Set up contact search
     const contactSearch = document.getElementById('contact-search');
@@ -86,6 +103,31 @@ async function initializeSearch() {
             companyResults.style.display = 'none';
         }
     });
+
+    // Set up Mavs game search
+    const mavsGameSearch = document.getElementById('mavs-game-search');
+    const mavsGameResults = document.getElementById('mavs-game-search-results');
+
+    // Show all Mavs games when clicking into the field
+    mavsGameSearch.addEventListener('focus', () => {
+        displayMavsGamesSearchResults(mavsGames);
+    });
+
+    // Filter Mavs games when typing
+    mavsGameSearch.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filteredGames = mavsGames.filter(game => 
+            game.properties.name.toLowerCase().includes(searchTerm)
+        );
+        displayMavsGamesSearchResults(filteredGames);
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.matches('#mavs-game-search')) {
+            mavsGameResults.style.display = 'none';
+        }
+    });
 }
 
 // Helper function to display contact results
@@ -126,6 +168,32 @@ function displayCompanyResults(companiesToShow) {
     });
     
     resultsDiv.style.display = companiesToShow.length ? 'block' : 'none';
+}
+
+// Helper function to display Mavs games results
+function displayMavsGamesSearchResults(results) {
+    const searchResults = document.getElementById('mavs-game-search-results');
+    const selectedMavsGameDiv = document.getElementById('selected-mavs-game');
+    
+    searchResults.innerHTML = '';
+    
+    results.forEach(game => {
+        const div = document.createElement('div');
+        div.className = 'search-result-item';
+        div.textContent = game.properties.name;
+        
+        div.addEventListener('click', () => {
+            selectedMavsGame = game.id;
+            searchResults.style.display = 'none';
+            selectedMavsGameDiv.textContent = game.properties.name;
+            selectedMavsGameDiv.style.display = 'block';
+            document.getElementById('mavs-game-search').value = '';
+        });
+        
+        searchResults.appendChild(div);
+    });
+    
+    searchResults.style.display = results.length > 0 ? 'block' : 'none';
 }
 
 // Initialize when the page loads
@@ -219,8 +287,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('Company Association response:', companyAssociationData);
             }
 
+            if (selectedMavsGame) {
+                console.log('Creating association between expense and Mavs game');
+                const mavsGameAssociationResponse = await fetch('/api/create-mavs-game-association', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        expenseId: responseData.expense.id,
+                        mavsGameId: selectedMavsGame
+                    })
+                });
+                
+                if (!mavsGameAssociationResponse.ok) {
+                    throw new Error(`Mavs game association error! status: ${mavsGameAssociationResponse.status}`);
+                }
+
+                const mavsGameAssociationData = await mavsGameAssociationResponse.json();
+                console.log('Mavs Game Association response:', mavsGameAssociationData);
+            }
+
             successMessage.style.display = 'block';
             form.reset();
+            selectedMavsGame = null;
+            document.getElementById('selected-mavs-game').style.display = 'none';
+            document.getElementById('selected-mavs-game').textContent = '';
         } catch (error) {
             console.error('Error:', error);
             errorMessage.textContent = `Error: ${error.message}`;

@@ -433,6 +433,90 @@ app.post('/api/create-company-association', async (req, res) => {
     }
 });
 
+// Add this new endpoint with the other API endpoints
+app.get('/api/mavs-games', async (req, res) => {
+    try {
+        console.log('Fetching Mavs games from HubSpot...');
+        
+        const response = await axios.get(
+            'https://api.hubapi.com/crm/v3/objects/p44120672_mavs_games', // Adjust this if the custom object name is different
+            {
+                headers: {
+                    'Authorization': `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`
+                },
+                params: {
+                    limit: 100,
+                    properties: ['name', 'game_date', 'opponent'] // Add any other properties you need
+                }
+            }
+        );
+        
+        console.log('Mavs games response:', response.data);
+        
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error fetching Mavs games:', error.response?.data || error);
+        res.status(500).json({ 
+            error: 'Failed to fetch Mavs games',
+            details: error.response?.data || error.message
+        });
+    }
+});
+
+// Add the association endpoint
+app.post('/api/create-mavs-game-association', async (req, res) => {
+    try {
+        const { expenseId, mavsGameId } = req.body;
+        
+        console.log('Creating Mavs game association:', { expenseId, mavsGameId });
+
+        // First, get the valid association types between Mavs games and expenses
+        const typesResponse = await axios.get(
+            `https://api.hubapi.com/crm/v3/associations/p44120672_mavs_games/p44120672_expenses/types`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`
+                }
+            }
+        );
+
+        console.log('Available Mavs game association types:', typesResponse.data);
+
+        // Create the association using the first available type
+        const response = await axios.post(
+            'https://api.hubapi.com/crm/v3/associations/p44120672_mavs_games/p44120672_expenses/batch/create',
+            {
+                inputs: [
+                    {
+                        from: { id: mavsGameId },
+                        to: { id: expenseId },
+                        type: typesResponse.data.results[0].id
+                    }
+                ]
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        
+        console.log('Mavs Game Association Response:', response.data);
+        
+        res.json({
+            success: true,
+            data: response.data
+        });
+    } catch (error) {
+        console.error('Mavs Game Association Error Details:', error.response?.data);
+        res.status(500).json({ 
+            error: 'Failed to create Mavs game association',
+            details: error.response?.data || error.message
+        });
+    }
+});
+
 // Catch-all route to serve the frontend application
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
