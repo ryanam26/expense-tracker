@@ -102,7 +102,15 @@
             <div class="search-container">
                 <input type="text" id="mavs-game-search" placeholder="Search Mavs games" autocomplete="off">
                 <div id="mavs-game-search-results" class="search-results"></div>
+                <div id="selected-mavs-game"></div>
             </div>
+        </div>
+
+        <div class="form-group">
+            <label for="hubspot-owner">Expense Owner*</label>
+            <select id="hubspot-owner" name="hubspot-owner" required>
+                <!-- Options will be populated by JavaScript -->
+            </select>
         </div>
 
         <button type="submit">Submit Expense</button>
@@ -112,6 +120,8 @@
     <div id="successMessage" class="success-message">Expense submitted successfully!</div>
     <div id="errorMessage" class="error-message">Error submitting expense. Please try again.</div>
 
-    <script src="/js/main.js"></script>
+    <script src="js/owners.js"></script>
+    <script src="js/ownerManager.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>

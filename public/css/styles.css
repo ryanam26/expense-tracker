@@ -166,3 +166,16 @@ input[type="file"]::-webkit-file-upload-button:hover {
     border: 1px solid #ddd;
     border-radius: 4px;
 }
+
+#hubspot-owner {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+#hubspot-owner:focus {
+    border-color: #4CAF50;
+    outline: none;
+}

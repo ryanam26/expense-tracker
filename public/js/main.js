@@ -1,3 +1,5 @@
+window.addEventListener('error', (e) => console.log('Error location:', e.target?.id, 'Error:', e.error));
+
 let contacts = [];
 let companies = [];
 let selectedContact = null;
@@ -260,6 +262,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// Add this helper function at the top of your file
+function safeSetDisplay(elementId, displayValue) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.style.display = displayValue;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('expenseForm');
     const successMessage = document.getElementById('successMessage');
@@ -269,26 +279,33 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        console.log('Selected Contact at submission:', selectedContact);
-        
-        const formData = new FormData();
-
-        const expenseData = {
-            properties: {
-                amount: document.getElementById('amount').value,
-                expense_date: document.getElementById('expense_date').value,
-                expense_type: document.getElementById('expense_type').value,
-                hubspot_owner_id: '1961905556',
-                expense_name: document.getElementById('expense_name').value,
-                expense_notes: document.getElementById('expense_notes').value,
-                payment_type: document.getElementById('payment_type').value,
-                visa_total: document.getElementById('amount').value
-            }
-        };
-
-        formData.append('data', JSON.stringify(expenseData));
-
         try {
+            console.log('Form submission started');
+            
+            // Log elements before trying to access their style
+            console.log('mavs-game-search-results element:', document.getElementById('mavs-game-search-results'));
+            console.log('selected-mavs-game element:', document.getElementById('selected-mavs-game'));
+            console.log('company-search-results element:', document.getElementById('company-search-results'));
+            
+            console.log('Selected Contact at submission:', selectedContact);
+            
+            const formData = new FormData();
+
+            const expenseData = {
+                properties: {
+                    amount: document.getElementById('amount').value,
+                    expense_date: document.getElementById('expense_date').value,
+                    expense_type: document.getElementById('expense_type').value,
+                    hubspot_owner_id: document.getElementById('hubspot-owner').value,
+                    expense_name: document.getElementById('expense_name').value,
+                    expense_notes: document.getElementById('expense_notes').value,
+                    payment_type: document.getElementById('payment_type').value,
+                    visa_total: document.getElementById('amount').value
+                }
+            };
+
+            formData.append('data', JSON.stringify(expenseData));
+
             // First create the expense
             const response = await fetch('/api/submit-expense', {
                 method: 'POST',
@@ -369,10 +386,28 @@ document.addEventListener('DOMContentLoaded', () => {
             successMessage.style.display = 'block';
             form.reset();
             selectedMavsGame = null;
-            document.getElementById('selected-mavs-game').style.display = 'none';
+            safeSetDisplay('selected-mavs-game', 'none');
             document.getElementById('selected-mavs-game').textContent = '';
+
+            // After successful submission, safely reset displays
+            safeSetDisplay('mavs-game-search-results', 'none');
+            safeSetDisplay('selected-mavs-game', 'none');
+            safeSetDisplay('company-search-results', 'none');
+            
+            // Reset the form
+            form.reset();
+            
+            // Reset any selected values
+            selectedMavsGame = null;
+            selectedCompany = null;
+
+            console.log('Form submitted successfully');
+
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Detailed error:', {
+                message: error.message,
+                stack: error.stack
+            });
             errorMessage.textContent = `Error: ${error.message}`;
             errorMessage.style.display = 'block';
         } finally {
@@ -405,3 +440,11 @@ document.getElementById('mavs-game-search').addEventListener('input', (e) => {
         displayMavsGamesSearchResults(filteredGames);
     }
 });
+
+// Add with other initializations
+const ownerManager = new OwnerManager();
+
+const selectedMavsGameElement = document.getElementById('selected-mavs-game');
+if (selectedMavsGameElement) {
+    selectedMavsGameElement.style.display = 'none';
+}
